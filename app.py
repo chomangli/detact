@@ -270,7 +270,7 @@ col1, col2, col3 = st.columns([1,6,1])
 with col1:
     inst_logo = os.path.join(BASE_DIR, "nitn.logo.png")
     if os.path.exists(inst_logo):
-        st.image(inst_logo, width=200)
+        st.image(inst_logo, width=300)
 
 # Title (Center)
 with col2:
@@ -283,8 +283,7 @@ with col2:
 with col3:
     texmin_logo = os.path.join(BASE_DIR, "texmin_logo.png")
     if os.path.exists(texmin_logo):
-        st.image(texmin_logo, width=250)
-
+        st.image(texmin_logo, width=300)
 # ------------------------------------------------------------
 # NAVIGATION BAR
 # ------------------------------------------------------------
@@ -294,14 +293,7 @@ st.markdown("""
 <div class="navbar">
 
 <a href="?section=home">Home</a>
-|
-<a href="?section=contact">Contact</a>
-|
-<a href="?section=author">Author</a>
-
-</div>
-
-""", unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
 st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
 
@@ -311,6 +303,9 @@ st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
 
 query_params = st.query_params
 section = query_params.get("section", "home")
+
+
+
 
 # ============================================================
 # HOME SECTION
@@ -340,7 +335,7 @@ if section == "home":
         "stone (perovskite)": ("stone","perovskite.png"),
         "rock (chondrite)": ("rock","chondrite.png"),
         "gem_mineral_ore (gypsum)": ("gem_mineral_ore","gypsum.png"),
-        "mineral (Biotite)": ("mineral","biotite.png"),
+        "mineral (Biotite)": ("mineral","Biotite.png"),
         "rock (allitroclastic breccia)": ("rock","allogeneic breccia.png"),
         "stone (meteorite seimchan)": ("stone","meteorite seimchan.png")
 
@@ -469,74 +464,30 @@ distribution.
         # --------------------------------------------------------
         # ACKNOWLEDGEMENT
         # --------------------------------------------------------
+st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
 
-        st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
+st.subheader("Acknowledgement")
 
-        st.subheader("Acknowledgement")
-
-        st.write("""
+st.write("""
 This project was supported under the **TEXMiN UG/PG Fellowship**, a Technology
 Innovation Hub at **IIT (ISM) Dhanbad**, and carried out under an institutional
 **MoU collaboration with the National Institute of Technology Nagaland**.
 """)
 
-        st.markdown(
-            "<h3 style='text-align:center;color:green;'>Thank You</h3>",
-            unsafe_allow_html=True
-        )
+# Supervisor acknowledgement
 
-# ============================================================
-# AUTHOR SECTION
-# ============================================================
+st.subheader("Supervisor")
 
-elif section == "author":
+st.write("""
+I express my sincere gratitude to  
+**Dr. Dushmanta Kumar Das**, Associate Professor,  
+Department of Electrical and Electronics Engineering,  
+**National Institute of Technology Nagaland**,  
+for his continuous guidance, valuable insights and academic support
+throughout the development of this Mineralogical Material Detection system.
+""")
 
-    st.subheader("Author")
-
-    a1, a2, a3 = st.columns(3)
-
-    with a1:
-        st.image(os.path.join(AUTHORS_DIR,"Chomangli1.jpg"), width=350)
-        st.markdown("**Chomangli T Sangtam**")
-        st.write("B.Tech Student")
-        st.write("Department of Electrical and Electronics Engineering")
-        st.write("National Institute of Technology Nagaland")
-
-    with a2:
-        st.image(os.path.join(AUTHORS_DIR,"maloy1.jpg"), width=350)
-        st.markdown("**Mr. Maloy Kumar Dey**")
-        st.write("PhD Scholar")
-        st.write("Department of Computer Science and Engineering")
-        st.write("National Institute of Technology Nagaland")
-
-    with a3:
-        st.image(os.path.join(AUTHORS_DIR,"dushman1.jpg"), width=350)
-        st.markdown("**Dr. Dushman Kumar Das**")
-        st.write("Associate Professor")
-        st.write("Department of Electrical and Electronics Engineering")
-        st.write("National Institute of Technology Nagaland")
-
-# ============================================================
-# CONTACT SECTION
-# ============================================================
-
-elif section == "contact":
-
-    st.subheader("Contact")
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.markdown("**Chomangli T Sangtam**")
-        st.write("Phone: 7005182117")
-        st.write("Email: chomanglisangtam761@gmail.com")
-
-    with c2:
-        st.markdown("**Mr. Maloy Kumar Dey**")
-        st.write("Phone: 8296810118")
-        st.write("Email: maloy24@gmail.com")
-
-    with c3:
-        st.markdown("**Dr. Dushman Kumar Das**")
-        st.write("Phone: 9861060880")
-        st.write("Email: dushmantakumardas29@gmail.com")
+st.markdown(
+    "<h3 style='text-align:center;color:green;'>Thank You</h3>",
+    unsafe_allow_html=True
+)

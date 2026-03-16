@@ -1,3 +1,4 @@
+node_modules/
 venv/
 torch_cache/
 __pycache__/
