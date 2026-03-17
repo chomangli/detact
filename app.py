@@ -1,5 +1,5 @@
 
-# ============================================================
+## ============================================================
 # MINERAL CLASSIFICATION SYSTEM
 # DINOv2 + MLP + MAHALANOBIS OOD
 # STREAMLIT APPLICATION
@@ -12,33 +12,30 @@ import numpy as np
 from PIL import Image
 import pickle
 import os
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 AUTHORS_DIR = os.path.join(BASE_DIR, "authors")
-# ------------------------------------------------------------
+
 # ------------------------------------------------------------
 # DEVICE
 # ------------------------------------------------------------
-
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ------------------------------------------------------------
-# TORCH HUB CACHE (important for deployment)
+# TORCH HUB CACHE
 # ------------------------------------------------------------
-
 torch.hub.set_dir("torch_cache")
 
 # ------------------------------------------------------------
-# CLASSES
+# CLASSES (FIXED)
 # ------------------------------------------------------------
-
-CLASSES = ["stone","gem_mineral_ore","mineral","rock"]
+CLASSES = ["gem", "crystal", "mineral_ore", "mineral"]
 
 IMG_SIZE = 224
 
 # ------------------------------------------------------------
 # IMAGE TRANSFORM
 # ------------------------------------------------------------
-
 transform = T.Compose([
     T.Resize((IMG_SIZE, IMG_SIZE)),
     T.ToTensor(),
@@ -51,30 +48,25 @@ transform = T.Compose([
 # ------------------------------------------------------------
 # LOAD DINOv2
 # ------------------------------------------------------------
-
 @st.cache_resource
 def load_dino():
-
     model = torch.hub.load(
         "facebookresearch/dinov2",
         "dinov2_vits14",
         trust_repo=True
     )
-
     model.eval()
     model.to(DEVICE)
-
     return model
 
 dino = load_dino()
+
 # ------------------------------------------------------------
 # MLP CLASSIFIER
 # ------------------------------------------------------------
-
 class MLP_MMD(nn.Module):
 
     def __init__(self):
-
         super().__init__()
 
         self.fc1 = nn.Linear(384,256)
@@ -89,18 +81,14 @@ class MLP_MMD(nn.Module):
         self.drop = nn.Dropout(0.2)
 
     def forward(self,x):
-
         x = self.drop(self.act(self.bn1(self.fc1(x))))
         feat = self.act(self.bn2(self.fc2(x)))
-
         logits = self.classifier(feat)
-
         return logits
 
 # ------------------------------------------------------------
 # LOAD TRAINED CLASSIFIER
 # ------------------------------------------------------------
-
 @st.cache_resource
 def load_classifier():
 
@@ -115,7 +103,6 @@ def load_classifier():
     )
 
     model.eval()
-
     return model
 
 model = load_classifier()
@@ -123,7 +110,6 @@ model = load_classifier()
 # ------------------------------------------------------------
 # LOAD OOD STATISTICS
 # ------------------------------------------------------------
-
 @st.cache_resource
 def load_stats():
 
@@ -140,13 +126,11 @@ def load_stats():
 
     return means, inv_cov, threshold
 
-
 means, inv_cov, OOD_THRESHOLD = load_stats()
 
 # ------------------------------------------------------------
 # FEATURE EXTRACTION
 # ------------------------------------------------------------
-
 def extract_feature(image):
 
     img = transform(image).unsqueeze(0).to(DEVICE)
@@ -159,25 +143,20 @@ def extract_feature(image):
     return feat.cpu().numpy()[0]
 
 # ------------------------------------------------------------
-# MAHALANOBIS DISTANCE
+# MAHALANOBIS DISTANCE (FIXED)
 # ------------------------------------------------------------
-
 def mahalanobis(x, mean):
-
     diff = x - mean
-
-    return np.sqrt(diff.T @ inv_cov @ diff)
+    return float(np.sqrt(np.maximum(diff.T @ inv_cov @ diff, 1e-12)))
 
 # ------------------------------------------------------------
-# CLASSIFICATION
+# CLASSIFICATION (FIXED dtype)
 # ------------------------------------------------------------
-
 def classify_feature(feature):
 
-    x = torch.tensor(feature).unsqueeze(0).to(DEVICE)
+    x = torch.tensor(feature, dtype=torch.float32).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
-
         logits = model(x)
         probs = torch.softmax(logits,dim=1)
         pred = torch.argmax(probs,dim=1).item()
@@ -191,129 +170,61 @@ def classify_feature(feature):
 
     return label, probs.cpu().numpy()[0]
 
-
 # ============================================================
-# STREAMLIT USER INTERFACE
+# STREAMLIT USER INTERFACE (UNCHANGED)
 # ============================================================
-
-# ------------------------------------------------------------
-# PATH CONFIGURATION
-# ------------------------------------------------------------
 
 SAMPLES_DIR = os.path.join(BASE_DIR, "samples")
 
-# ------------------------------------------------------------
-# PAGE CONFIG
-# ------------------------------------------------------------
-
 st.set_page_config(
-    page_title="Mineralogical Material Detection",
+    page_title="Geological Material Detection",
     layout="wide"
 )
 
-# ------------------------------------------------------------
-# GLOBAL FONT SIZE FIX (READABILITY)
-# ------------------------------------------------------------
 st.markdown("""
 <style>
-
-html, body, [class*="css"] {
-    font-size:26px;
-}
-
-h1 {
-    font-size:80px !important;
-    font-weight:700;
-}
-
-h2 {
-    font-size:52px !important;
-}
-
-h3 {
-    font-size:40px !important;
-}
-
-p, li {
-    font-size:26px !important;
-    line-height:1.7;
-}
-
-.navbar{
-text-align:center;
-font-size:28px;
-margin-top:16px;
-margin-bottom:16px;
-}
-
-.navbar a{
-text-decoration:none;
-color:#333;
-padding:12px 24px;
-font-weight:700;
-}
-
-.navbar a:hover{
-color:#0d6efd;
-border-bottom:4px solid #0d6efd;
-}
-
+html, body, [class*="css"] { font-size:26px; }
+h1 { font-size:80px !important; font-weight:700; }
+h2 { font-size:52px !important; }
+h3 { font-size:40px !important; }
+p, li { font-size:26px !important; line-height:1.7; }
+.navbar{text-align:center;font-size:28px;margin-top:16px;margin-bottom:16px;}
+.navbar a{text-decoration:none;color:#333;padding:12px 24px;font-weight:700;}
+.navbar a:hover{color:#0d6efd;border-bottom:4px solid #0d6efd;}
 </style>
 """, unsafe_allow_html=True)
 
-# ------------------------------------------------------------
-# HEADER (INSTITUTE LOGO + TITLE + TEXMiN LOGO)
-# ------------------------------------------------------------
 col1, col2, col3 = st.columns([1,6,1])
 
-# Institute Logo (Left)
 with col1:
     inst_logo = os.path.join(BASE_DIR, "nitn.logo.png")
     if os.path.exists(inst_logo):
         st.image(inst_logo, width=300)
 
-# Title (Center)
 with col2:
     st.markdown(
-        "<h1 style='text-align:center;'>Mineralogical Material Detection</h1>",
+        "<h1 style='text-align:center;'>Geological Material Detection</h1>",
+        
+        
         unsafe_allow_html=True
     )
 
-# TEXMiN Logo (Right)
 with col3:
     texmin_logo = os.path.join(BASE_DIR, "texmin_logo.png")
     if os.path.exists(texmin_logo):
         st.image(texmin_logo, width=300)
-# ------------------------------------------------------------
-# NAVIGATION BAR
-# ------------------------------------------------------------
 
-st.markdown("""
-
-<div class="navbar">
-
-<a href="?section=home">Home</a>
-            """, unsafe_allow_html=True)
-
+st.markdown("""<div class="navbar"><a href="?section=home">Home</a>""", unsafe_allow_html=True)
 st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
-
-# ------------------------------------------------------------
-# READ PAGE SECTION
-# ------------------------------------------------------------
 
 query_params = st.query_params
 section = query_params.get("section", "home")
 
-
-
-
-# ============================================================
 # HOME SECTION
-# ============================================================
-
+# =================================
 if section == "home":
 
-    st.subheader("Mineral Image Input")
+    st.subheader("Image Input")
 
     image = None
 
@@ -322,23 +233,16 @@ if section == "home":
         ["Dropdown", "Camera", "Upload"],
         horizontal=True
     )
-
-    # --------------------------------
-    # DROPDOWN
-    # --------------------------------
-
+# --------------------------------
+# DROPDOWN
+# --------------------------------
     if input_mode == "Dropdown":
 
         samples = {
-
         "mineral (epidote)": ("mineral","epidote.png"),
-        "stone (perovskite)": ("stone","perovskite.png"),
-        "rock (chondrite)": ("rock","chondrite.png"),
-        "gem_mineral_ore (gypsum)": ("gem_mineral_ore","gypsum.png"),
+        "crystal (gypsum)": ("crystal","gypsum.png"),
         "mineral (Biotite)": ("mineral","Biotite.png"),
-        "rock (allitroclastic breccia)": ("rock","allogeneic breccia.png"),
-        "stone (meteorite seimchan)": ("stone","meteorite seimchan.png")
-
+        
         }
 
         option = st.selectbox(
@@ -347,56 +251,39 @@ if section == "home":
         )
 
         if option != "None":
-
-            class_label, file_name = samples[option]
-
+            _, file_name = samples[option]
             sample_path = os.path.join(SAMPLES_DIR, file_name)
 
             if os.path.exists(sample_path):
-
                 image = Image.open(sample_path).convert("RGB")
                 st.image(image, width=350)
-
-            else:
-                st.error(f"Image not found: {sample_path}")
-
-    # --------------------------------
-    # CAMERA
-    # --------------------------------
-
+# --------------------------------
+# CAMERA
+ # --------------------------------
     elif input_mode == "Camera":
-
         cam = st.camera_input("Capture mineral image")
-
         if cam is not None:
             image = Image.open(cam).convert("RGB")
-
-    # --------------------------------
-    # UPLOAD
-    # --------------------------------
-
+# --------------------------------
+# UPLOAD
+# --------------------------------
     elif input_mode == "Upload":
-
         uploaded = st.file_uploader(
             "Upload mineral image",
             type=["jpg", "jpeg", "png"]
         )
-
         if uploaded:
             image = Image.open(uploaded).convert("RGB")
 
     st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
-
-    # --------------------------------------------------------
-    # PROCESSING + RESULT
-    # --------------------------------------------------------
-
+# --------------------------------------------------------
+# PROCESSING + RESULT
+# --------------------------------------------------------
     if image is not None:
 
         st.image(image, width=400)
 
         with st.spinner("Processing mineral image..."):
-
             feature = extract_feature(image)
             label, probs = classify_feature(feature)
 
@@ -418,53 +305,47 @@ if section == "home":
                 st.markdown("#### Class Probabilities")
 
                 for c, p in zip(CLASSES, probs):
-
                     st.write(f"**{c}**")
                     st.progress(float(p))
                     st.write(f"{p*100:.2f}%")
 
             else:
-                st.error("Out-of-distribution mineral sample detected")
+                st.error("Out-of-distribution sample detected")
+               
+# --------------------------------------------------------
+# ABOUT PROJECT
+# --------------------------------------------------------
 
-        # --------------------------------------------------------
-        # ABOUT PROJECT
-        # --------------------------------------------------------
+st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
 
-        st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
+st.subheader("About the Project")
 
-        st.subheader("About the Project")
+st.write("""
+This application implements an automated *Geological Material Detection*.
 
-        st.write("""
-This application implements an automated **Mineralogical Material Detection**.
+The system utilizes a *DINOv2 Vision Transformer encoder* to extract semantic
+features from  images. These features are processed by a 
+*MMD-MLP classifier* trained to categorize geological samples into four classes:
 
-The system utilizes a **DINOv2 Vision Transformer encoder** to extract semantic
-features from mineral images. These features are processed by a 
-**MMD-MLP classifier** trained to categorize geological samples into four classes:
-
-• stone  
-• mineral  
-• rock  
-• gem_mineral_ore  
+* Crystal 
+* mineral  
+* mineral_ore  
+* gem  
 
 To ensure reliability, the system incorporates **Mahalanobis distance-based
-Out-of-Distribution (OOD) detection**, which identifies mineral images that do
-not belong to the trained distribution and labels them as **unknown**.
+Out-of-Distribution (OOD) detection**, which identifies  images that do
+not belong to the trained distribution and labels them as *unknown*.
 
 Images can be provided through three input modes:
 
-• Dropdown sample selection  
-• Camera capture  
-• Image upload  
+* Dropdown sample selection  
+* Camera capture  
+* Image upload  
 
 After input, the system performs **feature extraction → classification → OOD
 verification** before presenting the predicted mineral class and probability
 distribution.
 """)
-
-        # --------------------------------------------------------
-        # ACKNOWLEDGEMENT
-        # --------------------------------------------------------
-st.markdown("<hr style='border:2px dotted gray'>", unsafe_allow_html=True)
 
 st.subheader("Acknowledgement")
 
@@ -474,8 +355,6 @@ Innovation Hub at **IIT (ISM) Dhanbad**, and carried out under an institutional
 **MoU collaboration with the National Institute of Technology Nagaland**.
 """)
 
-# Supervisor acknowledgement
-
 st.subheader("Supervisor")
 
 st.write("""
@@ -484,7 +363,7 @@ I express my sincere gratitude to
 Department of Electrical and Electronics Engineering,  
 **National Institute of Technology Nagaland**,  
 for his continuous guidance, valuable insights and academic support
-throughout the development of this Mineralogical Material Detection system.
+throughout the development of this Geological Material Detection system.
 """)
 
 st.markdown(
