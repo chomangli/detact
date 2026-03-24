@@ -1,5 +1,15 @@
-node_modules/
-venv/
-torch_cache/
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+
+# Node
+node_modules/
+
+# Torch cache
+torch_cache/
